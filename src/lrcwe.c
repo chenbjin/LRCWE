@@ -514,7 +514,7 @@ void InitNet() {
   // 关系向量初始化
   if (flag_triplet>0) {
     syn2.resize(relation_num);
-    for (cc = 0; cc < syn2.size(); cc++) syn2[a].resize(layer1_size);
+    for (cc = 0; cc < syn2.size(); cc++) syn2[cc].resize(layer1_size);
     for (a = 0; a < relation_num; a++) {
       for (b = 0; b < layer1_size; b++) 
         syn2[a][b] = randn(0,1.0/layer1_size,-6/sqrt(layer1_size),6/sqrt(layer1_size));

@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   char file_name[max_size], st[100][max_size];
   float dist, len, bestd[N], vec[max_size];
   long long words, size, a, b, c, d, cn, bi[100];
-  char ch;
+  //char ch;
   float *M;
   char *vocab;
   if (argc < 2) {
