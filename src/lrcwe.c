@@ -65,12 +65,12 @@ int flag_triplet = 0, flag_synonym = 0, flag_antonym = 0;
 map<int,vector<int> > synonyms;
 map<int,vector<int> > antonyms;
 char buf[2*MAX_STRING];
-real belta = 0.7, lambda = 0.025;
+real belta_syn = 0.7, belta_ant = 0.2, alpha_syn = 0.025;
 // relation from freebase @chenbingjin 2017-1-11
 map<string,int> relation2id;
 map<int, vector<intpair> > triplets;
 vector<vector<real> > syn2;   //relation vector
-real gama = 0.8, alpha2 = 0.01;
+real belta_rel = 0.8, alpha_rel = 0.01;
 int relation_num = 0;
 // parameters vector @chenbingjin 2017-1-19
 real *syn1lswe, *syn1rswe;
@@ -683,15 +683,16 @@ void *TrainModelThread(void *id) {
               l2 = target * layer1_size;
               f = 0;
               for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
-              if (f > MAX_EXP) g = (label - 1) * lambda;
-              else if (f < -MAX_EXP) g = (label - 0) * lambda;
-              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * lambda;
+              if (f > MAX_EXP) g = (label - 1) * alpha_syn;
+              else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
+              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
               for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2];
-              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta * g * syn0[c + l3];
+              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_syn * g * syn0[c + l3];
             }
-            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta * neu1e[c];
+            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_syn * neu1e[c];
           }
-        } else if (flag_antonym > 0 && antonyms[word].size() > 0) {
+        } 
+        if (flag_antonym > 0 && antonyms[word].size() > 0) {
           for (unsigned int i = 0; i < antonyms[word].size(); ++i) {
             int t = antonyms[word][i];
             l3 = t * layer1_size;
@@ -710,13 +711,13 @@ void *TrainModelThread(void *id) {
               l2 = target * layer1_size;
               f = 0;
               for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
-              if (f > MAX_EXP) g = (label - 1) * lambda;
-              else if (f < -MAX_EXP) g = (label - 0) * lambda;
-              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * lambda;
+              if (f > MAX_EXP) g = (label - 1) * alpha_syn;
+              else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
+              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
               for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2];
-              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta * g * syn0[c + l3]; 
+              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_ant * g * syn0[c + l3]; 
             }
-            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta * neu1e[c];              
+            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_ant * neu1e[c];              
           }  
         }
         //rcwe 训练 @chenbingjin 2017-01-12
@@ -740,14 +741,14 @@ void *TrainModelThread(void *id) {
               l2 = target * layer1_size;
               f = 0;
               for (c = 0; c < layer1_size; c++) f += addr[c] * syn1rswe[c + l2];
-              if (f > MAX_EXP) g = (label - 1) * alpha2;
-              else if (f < -MAX_EXP) g = (label - 0) * alpha2;
-              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha2;
+              if (f > MAX_EXP) g = (label - 1) * alpha_rel;
+              else if (f < -MAX_EXP) g = (label - 0) * alpha_rel;
+              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_rel;
               for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1rswe[c + l2];
-              for (c = 0; c < layer1_size; c++) syn1rswe[c + l2] += gama * g * addr[c];
+              for (c = 0; c < layer1_size; c++) syn1rswe[c + l2] += belta_rel * g * addr[c];
             }
-            for (c = 0; c < layer1_size; c++) syn0[c + l3] += gama * neu1e[c];//更新词t
-            for (c = 0; c < layer1_size; c++) syn2[rid][c] += gama * neu1e[c];//更新向量r
+            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_rel * neu1e[c];//更新词t
+            for (c = 0; c < layer1_size; c++) syn2[rid][c] += belta_rel * neu1e[c];//更新向量r
           }
         }
       }
@@ -828,13 +829,13 @@ void *TrainModelThread(void *id) {
             l2 = target * layer1_size;
             f = 0;
             for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1neg[c + l2];
-            if (f > MAX_EXP) g = (label - 1) * lambda;
-            else if (f < -MAX_EXP) g = (label - 0) * lambda;
-            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * lambda;
+            if (f > MAX_EXP) g = (label - 1) * alpha_syn;
+            else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
+            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
             for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1neg[c + l2];
-            for (c = 0; c < layer1_size; c++) syn1neg[c + l2] += belta * g * syn0[c + l3];
+            for (c = 0; c < layer1_size; c++) syn1neg[c + l2] += belta_syn * g * syn0[c + l3];
           }
-          for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta * neu1e[c];
+          for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_syn * neu1e[c];
         }
       }
     }
@@ -1066,6 +1067,11 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-cbow", argc, argv)) > 0) cbow = atoi(argv[i + 1]);
   if (cbow) alpha = 0.05;
   if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-alpha-syn", argc, argv)) > 0) alpha_syn = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-alpha-rel", argc, argv)) > 0) alpha_rel = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-belta-syn", argc, argv)) > 0) belta_syn = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-belta-ant", argc, argv)) > 0) belta_ant = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-belta-rel", argc, argv)) > 0) belta_rel = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(output_file, argv[i + 1]);
   if ((i = ArgPos((char *)"-window", argc, argv)) > 0) window = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-sample", argc, argv)) > 0) sample = atof(argv[i + 1]);
