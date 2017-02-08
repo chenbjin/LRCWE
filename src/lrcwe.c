@@ -698,6 +698,7 @@ void *TrainModelThread(void *id) {
             l3 = t * layer1_size;
             for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
             for (d = 0; d < negative+1;d++){
+              bool fflag = false;
               if (d == 0) {
                 target = t;
                 label = 0;
@@ -705,8 +706,14 @@ void *TrainModelThread(void *id) {
                 next_random = next_random * (unsigned long long)25214903917 + 11;
                 target = table[(next_random >> 16) % table_size];
                 if (target == 0) target = next_random % (vocab_size - 1) + 1;
-                if (target == word) label = 1;
-                else label = 0;
+                for (unsigned int j = 0; j < antonyms[word].size(); ++j) {
+                  if (target == antonyms[word][j]) {
+                    fflag = true;
+                    break;
+                  }
+                }
+                if (fflag) continue;
+                label = 1;
               }
               l2 = target * layer1_size;
               f = 0;
@@ -1088,7 +1095,7 @@ int main(int argc, char **argv) {
     expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
     expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
   }
-  printf("alpha:%f, belta_syn:%f, belta_ant:%f", alpha,belta_syn, belta_ant);
+  printf("alpha:%f, belta_syn:%f, belta_ant:%f\n", alpha,belta_syn, belta_ant);
   TrainModel();
   return 0;
 }
