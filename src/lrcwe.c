@@ -65,7 +65,7 @@ int flag_triplet = 0, flag_synonym = 0, flag_antonym = 0;
 map<int,vector<int> > synonyms;
 map<int,vector<int> > antonyms;
 char buf[2*MAX_STRING];
-real belta_syn = 0.7, belta_ant = 0.2, alpha_syn = 0.025;
+real belta_syn = 0.7, belta_ant = 0.2, alpha_syn = 0.025, alpha_ant = 0.001;
 // relation from freebase @chenbingjin 2017-1-11
 map<string,int> relation2id;
 map<int, vector<intpair> > triplets;
@@ -698,7 +698,7 @@ void *TrainModelThread(void *id) {
             l3 = t * layer1_size;
             for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
             for (d = 0; d < negative+1;d++){
-              bool fflag = false;
+              //bool fflag = false;
               if (d == 0) {
                 target = t;
                 label = 0;
@@ -718,9 +718,9 @@ void *TrainModelThread(void *id) {
               l2 = target * layer1_size;
               f = 0;
               for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
-              if (f > MAX_EXP) g = (label - 1) * alpha_syn;
-              else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
-              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
+              if (f > MAX_EXP) g = (label - 1) * alpha_ant;
+              else if (f < -MAX_EXP) g = (label - 0) * alpha_ant;
+              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_ant;
               for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2];
               for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_ant * g * syn0[c + l3]; 
             }
@@ -1075,6 +1075,7 @@ int main(int argc, char **argv) {
   if (cbow) alpha = 0.05;
   if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-alpha-syn", argc, argv)) > 0) alpha_syn = atof(argv[i + 1]);
+  if ((i = ArgPos((char *)"-alpha-ant", argc, argv)) > 0) alpha_ant = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-alpha-rel", argc, argv)) > 0) alpha_rel = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-belta-syn", argc, argv)) > 0) belta_syn = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-belta-ant", argc, argv)) > 0) belta_ant = atof(argv[i + 1]);
@@ -1095,7 +1096,7 @@ int main(int argc, char **argv) {
     expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
     expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
   }
-  printf("alpha:%f, belta_syn:%f, belta_ant:%f\n", alpha,belta_syn, belta_ant);
+  printf("alpha:%f, alpha_syn:%f, alpha_ant:%f\nbelta_syn:%f, belta_ant:%f\n", alpha, alpha_syn, alpha_ant, belta_syn, belta_ant);
   TrainModel();
   return 0;
 }
