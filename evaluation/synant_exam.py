@@ -23,9 +23,9 @@ def load_questions(filename):
 				continue
 			question.append((arr[0].strip(),arr[1].strip()))
 			if arr[2].strip() == "ANT":
-				label.append(1)
-			else:
 				label.append(0)
+			else:
+				label.append(1)
 	return question, label
 
 def similarity(v1,v2):
@@ -44,7 +44,7 @@ def main():
 		return
 	modelfile = sys.argv[1]
 	model = load_model(modelfile)
-	ques, label = load_questions('../gen_data/ANT-SYN-TestSet/test600-pairs.adj')
+	ques, label = load_questions('datasets/ANT-SYN-TestSet/test600-pairs.adj')
 	print len(ques), len(label)
 	cnt = 0
 	sims = []
@@ -57,6 +57,7 @@ def main():
 			sim = similarity(model[pair[0]],model[pair[1]])
 		sims.append(sim)
 	print metrics.roc_auc_score(label,sims)
+	print metrics.average_precision_score(label, sims)	
 
 if __name__ == '__main__':
 	main()
