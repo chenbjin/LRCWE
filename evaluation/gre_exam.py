@@ -22,9 +22,9 @@ def load_GRE(filename):
 				continue
 			answer.append(arr[1].strip())
 			arr = arr[0].strip().split(':')
-			words.append(arr[0])
+			words.append(arr[0].strip())
 			for word in arr[1].strip().split(' '):
-				words.append(word)
+				words.append(word.strip())
 			question.append(words)
 	return question, answer
 
@@ -40,7 +40,7 @@ def similarity_scipy(v1, v2):
 
 def main():
 	if len(sys.argv) < 2:
-		print "Usage: python toefl_exam.py model"
+		print "Usage: python gre_exam.py model"
 		return
 	modelfile = sys.argv[1]
 	model = load_model(modelfile)
@@ -55,7 +55,7 @@ def main():
 		if quew not in model:
 			print 'ques not find: %s'%quew
 			continue
-		sim = 0.0
+		sim = 1.0
 		resw = None
 		for word in ques[i][1:]:
 			if word not in model:
@@ -63,7 +63,7 @@ def main():
 				continue
 			new_sim = similarity(model[quew], model[word])
 			#print "word: %s, sim:%f"%(word, new_sim)
-			if new_sim > sim:
+			if new_sim < sim:
 				sim = new_sim
 				resw = word
 		if resw == answ:

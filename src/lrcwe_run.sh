@@ -2,8 +2,8 @@
 ITER_NUM=3
 VEC_NUM=200
 BELTA_ANT=0.8
-BELTA_SYN=0.8
-ALPHA_SYN=0.025
+BELTA_SYN=0.7
+ALPHA_SYN=0.05
 ALPHA_ANT=0.01
 TRAIN_PATH="../gen_data/wikicorpus.1b"
 TRIPLET_PATH="../gen_data/easyfreebase.clean.freq"
