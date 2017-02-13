@@ -1096,7 +1096,7 @@ int main(int argc, char **argv) {
     expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
     expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
   }
-  printf("alpha:%f, alpha_syn:%f, alpha_ant:%f\nbelta_syn:%f, belta_ant:%f\n", alpha, alpha_syn, alpha_ant, belta_syn, belta_ant);
+  printf("alpha:%f, alpha_syn:%f, alpha_ant:%f, alpha_rel:%f\nbelta_syn:%f, belta_ant:%f, belta_rel:%f\n", alpha, alpha_syn, alpha_ant, alpha_rel, belta_syn, belta_ant,belta_rel);
   TrainModel();
   return 0;
 }

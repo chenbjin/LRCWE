@@ -46,7 +46,7 @@ def main():
 	model = load_model(modelfile)
 	ques, ans = load_GRE('datasets/GRE.txt')
 	print len(ques), len(ans)
-	
+	bcnt = 0	
 	cnt = 0
 	for i in range(len(ans)):
 		answ = ans[i]
@@ -54,6 +54,7 @@ def main():
 		#print '%s\t%s\t%s'%(ques[i][0],ans[i],','.join(ques[i][1:]))
 		if quew not in model:
 			print 'ques not find: %s'%quew
+			bcnt += 1
 			continue
 		sim = 1.0
 		resw = None
@@ -72,7 +73,7 @@ def main():
 	#		print 'wrong: %s\t%s\t%s'%(ques[i][0],ans[i],','.join(ques[i][1:]))
 	#		print 'ans:%s'%resw
 	print "cnt: %d, total: %d, accuracy: %f" %(cnt, len(ans), cnt*1.0/len(ans))
-
+	print bcnt
 
 if __name__ == '__main__':
 	main()
