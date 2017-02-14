@@ -698,7 +698,7 @@ void *TrainModelThread(void *id) {
             l3 = t * layer1_size;
             for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
             for (d = 0; d < negative+1;d++){
-              //bool fflag = false;
+              /*
               if (d == 0) {
                 target = word;
                 label = 0;
@@ -714,7 +714,9 @@ void *TrainModelThread(void *id) {
                 //}
                 if (target == t || target == word) continue;
                 label = 1;
-              }
+              }*/
+              target = word;
+              label = 0;
               l2 = target * layer1_size;
               f = 0;
               for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
