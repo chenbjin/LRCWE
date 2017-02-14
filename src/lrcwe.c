@@ -483,7 +483,7 @@ void InitNet() {
      syn1[a * layer1_size + b] = 0;
   }
   if (negative>0) {
-    // 分配负样本词的向量空间
+    // 分配参数向量空间
     a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real));
     if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
     // 初始化为0向量
@@ -492,7 +492,7 @@ void InitNet() {
   }
   //chenbingjin @2016-01-08
   if (flag_synonym>0 || flag_antonym>0) {
-    // 分配负syn/antonym词的向量空间
+    // 分配syn/antonym词的参数向量空间
     a = posix_memalign((void **)&syn1lswe, 128, (long long)vocab_size * layer1_size * sizeof(real));
     if (syn1lswe == NULL) {printf("Memory allocation failed\n"); exit(1);}
     // 初始化为0向量
@@ -500,7 +500,7 @@ void InitNet() {
      syn1lswe[a * layer1_size + b] = 0;
   }
   if (flag_triplet>0) {
-    // 分配负样本词的向量空间
+    // 分配参数向量空间
     a = posix_memalign((void **)&syn1rswe, 128, (long long)vocab_size * layer1_size * sizeof(real));
     if (syn1rswe == NULL) {printf("Memory allocation failed\n"); exit(1);}
     // 初始化为0向量
@@ -700,7 +700,7 @@ void *TrainModelThread(void *id) {
             for (d = 0; d < negative+1;d++){
               //bool fflag = false;
               if (d == 0) {
-                target = t;
+                target = word;
                 label = 0;
               }else {
                 next_random = next_random * (unsigned long long)25214903917 + 11;
@@ -712,7 +712,7 @@ void *TrainModelThread(void *id) {
                 //    break;
                 //  }
                 //}
-                if (target == t) continue;
+                if (target == t || target == word) continue;
                 label = 1;
               }
               l2 = target * layer1_size;
