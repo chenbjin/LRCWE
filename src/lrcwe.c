@@ -698,8 +698,7 @@ void *TrainModelThread(void *id) {
             l3 = t * layer1_size;
             for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
             for (d = 0; d < negative+1;d++){
-              /*
-              if (d == 0) {
+              /*if (d <= 2) {
                 target = word;
                 label = 0;
               }else {
