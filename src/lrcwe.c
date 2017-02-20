@@ -23,6 +23,7 @@
 #include <map>
 #include <iostream>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 #define MAX_STRING 100
@@ -68,6 +69,7 @@ char buf[2*MAX_STRING];
 real belta_syn = 0.7, belta_ant = 0.2, alpha_syn = 0.025, alpha_ant = 0.001;
 // relation from freebase @chenbingjin 2017-1-11
 map<string,int> relation2id;
+map<int,string> id2relation;
 map<int, vector<intpair> > triplets;
 vector<vector<real> > syn2;   //relation vector
 real belta_rel = 0.8, alpha_rel = 0.01;
@@ -457,6 +459,7 @@ void ReadTriplets() {
     relation = word2;
     if (relation2id.count(relation) == 0) {
       relation2id[relation] = relation_num;
+      id2relation[relation_num] = relation;
       relation_num ++;
     }
     triplets[j].push_back(make_pair(i,relation2id[relation]));
@@ -884,7 +887,7 @@ void TrainModel() {
   strcpy(output_theta_file, output_file);
   strcat(output_theta_file,".theta");
   fo = fopen(output_file, "wb");
-  foo = fopen(output_theta_file,"wb");
+  foo = fopen(output_theta_file,"w");
   if (classes == 0) {
     // Save the word vectors
     // Save the theta vectors
@@ -895,10 +898,26 @@ void TrainModel() {
       fprintf(foo, "%s ", vocab[a].word);
       if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
       else for (b = 0; b < layer1_size; b++) fprintf(fo, "%lf ", syn0[a * layer1_size + b]);
-      if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn1neg[a * layer1_size + b], sizeof(real), 1, foo);
-      else for (b = 0; b < layer1_size; b++) fprintf(foo, "%lf ", syn1neg[a * layer1_size + b]);
+      //if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn1neg[a * layer1_size + b], sizeof(real), 1, foo);
+      //else for (b = 0; b < layer1_size; b++) fprintf(foo, "%lf ", syn1neg[a * layer1_size + b]);
+      for (b = 0; b < layer1_size; b++) fprintf(foo, "%lf ", syn1neg[a * layer1_size + b]);
       fprintf(fo, "\n");
       fprintf(foo, "\n");
+    }
+    // Save the relation vectors
+    // save relation2id
+    if (flag_triplet > 0) {
+      ofstream rout1("relation.vec");
+      ofstream rout2("relation2id");
+      rout1 << relation_num << " " << layer1_size << endl;
+      for (int a = 0; a < relation_num; a++) {
+        rout1 << id2relation[a] << " ";
+        for (int b = 0; b < layer1_size; b++) rout1 << syn2[a][b] << " ";
+        rout1 << endl;
+        rout2 << id2relation[a] << " " << a << endl;
+      }
+      rout1.close();
+      rout2.close();
     }
   } else {
     // Run K-means on the word vectors
@@ -954,8 +973,8 @@ void TrainModel() {
     free(cent);
     free(cl);
   }
-  fclose(fo);
   fclose(foo);
+  fclose(fo);
 }
 
 int ArgPos(char *str, int argc, char **argv) {
