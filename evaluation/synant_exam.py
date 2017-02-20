@@ -45,8 +45,9 @@ def calc_average_precision(model, label, ques):
 	for pair in ques:
 		sim = similarity(model[pair[0]],model[pair[1]])
 		sims.append(sim)
-	#print 'auc: ',metrics.roc_auc_score(label,sims)
-	return metrics.average_precision_score(label,sims)
+	AUC = metrics.roc_auc_score(label,sims)
+	AP = metrics.average_precision_score(label,sims)
+	return AP,AUC
 
 def average_precision_test(model):
 	DIRNAME = 'datasets/ANT-SYN-TestSet/'
@@ -56,10 +57,11 @@ def average_precision_test(model):
 		print DIRNAME+testfile
 		ques, label = load_questions(vocab,DIRNAME+testfile,SYN=False)
 		print len(ques), len(label)
-		ap_ant = calc_average_precision(model, label, ques)	
+		ap_ant, auc_ant = calc_average_precision(model, label, ques)	
 		ques, label = load_questions(vocab,DIRNAME+testfile,SYN=True)
-		ap_syn = calc_average_precision(model, label, ques)	
+		ap_syn, auc_syn = calc_average_precision(model, label, ques)	
 		print 'ANT:{0},SYN:{1}'.format(ap_ant,ap_syn)
+		print 'AUC:{0}'.format(auc_syn)
 
 def main():
 	if len(sys.argv) < 2:

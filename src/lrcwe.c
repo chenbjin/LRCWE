@@ -693,12 +693,13 @@ void *TrainModelThread(void *id) {
           }
         } 
         if (flag_antonym > 0 && antonyms[word].size() > 0) {
+	  //int antsize = antonyms[word].size();
           for (unsigned int i = 0; i < antonyms[word].size(); ++i) {
             int t = antonyms[word][i];
             l3 = t * layer1_size;
             for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
             for (d = 0; d < negative+1;d++){
-              /*if (d <= 2) {
+              /*if (d <= 0) {
                 target = word;
                 label = 0;
               }else {
