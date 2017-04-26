@@ -666,42 +666,33 @@ void *TrainModelThread(void *id) {
         }
         //lcwe 训练 @chenbingjin 2017-01-10
         if (flag_synonym > 0 && synonyms[word].size() > 0) {
-          for (c = 0; c < layer1_size; c++) neu1[c] = 0;
-          for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
           for (unsigned int i = 0; i < synonyms[word].size(); ++i) {
             int t = synonyms[word][i];
             l3 = t * layer1_size;
-            for (c = 0; c < layer1_size; c++) neu1[c] += syn0[c + l3];
-          }
-          // average of synonyms
-          if (synonyms[word].size() > 1) {
-            for (c = 0; c < layer1_size; c++) neu1[c] /= synonyms[word].size();
-          }
-          if (negative > 0) for (d = 0; d < negative + 1; d++) {
-            if (d == 0) {
-               target = word;
-               label = 1;
-            }else {
-               next_random = next_random * (unsigned long long)25214903917 + 11;
-               target = table[(next_random >> 16) % table_size];
-               if (target == 0) target = next_random % (vocab_size - 1) + 1;
-               if (target == word) continue;
-               label = 0;
+            for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
+            for (d = 0; d < negative+1;d++) {
+              if (d == 0) {
+                target = word;
+                label = 1;
+              }else {
+                next_random = next_random * (unsigned long long)25214903917 + 11;
+                target = table[(next_random >> 16) % table_size];
+                if (target == 0) target = next_random % (vocab_size - 1) + 1;
+                if (target == word || target == t) continue;
+                //for (unsigned int j = 0; j < synonyms[word].size(); ++j)
+                //  if (target == synonyms[word][j]) continue;
+                label = 0;
+              }
+              l2 = target * layer1_size;
+              f = 0;
+              for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
+              if (f > MAX_EXP) g = (label - 1) * alpha_syn;
+              else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
+              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
+              for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2];
+              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_syn * g * syn0[c + l3];
             }
-            l2 = target * layer1_size;
-            f = 0;
-            for (c = 0; c < layer1_size; c++) f += neu1[c] * syn1lswe[c + l2]; //内积
-            if (f > MAX_EXP) g = (label - 1) * alpha_syn;
-            else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
-            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn; //sigmoid
-            for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2]; //累积误差梯度
-            for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_syn * g * neu1[c];  //参数向量更新
-          }
-          // 更新同义词集的词向量
-          for (unsigned int i = 0; i < synonyms[word].size(); ++i) {
-            int t = synonyms[word][i];
-            l3 = t * layer1_size;
-            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_syn * neu1e[c]; 
+            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_syn * neu1e[c];
           }
         } 
         if (flag_antonym > 0 && antonyms[word].size() > 0) {

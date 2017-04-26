@@ -1,13 +1,13 @@
 #!/bin/bash
 TYPE=$1
 IDX=$2
-BINARY=0
+BINARY=1
 ITER_NUM=3
-VEC_NUM=50
+VEC_NUM=200
 BELTA_ANT=0.8
-BELTA_SYN=0.7
+BELTA_SYN=$3
 BELTA_REL=0.8
-ALPHA_SYN=0.05
+ALPHA_SYN=$4
 ALPHA_ANT=0.025
 ALPHA_REL=0.001
 TRAIN_PATH="../gen_data/wikicorpus.1b"
@@ -24,7 +24,7 @@ fi
 
 if [ $TYPE = "S" ];then
 	echo "S training ..."
-	MODEL_PATH="../gen_data/model/lswe-cbow-${VEC_NUM}-model.s.${ITER_NUM}.${BELTA_SYN}.${ALPHA_SYN}.${IDX}.bin.txt"
+	MODEL_PATH="../gen_data/model/avg-lswe-cbow-${VEC_NUM}-model.s.${ITER_NUM}.${BELTA_SYN}.${ALPHA_SYN}.${IDX}.bin"
 	./lrcwe -train ${TRAIN_PATH} -synonym ${SYNONYM_PATH} -output ${MODEL_PATH} -save-vocab ${VOCAB_PATH} -belta-syn ${BELTA_SYN} -alpha-syn ${ALPHA_SYN} -size ${VEC_NUM} -window 5 -sample 1e-4 -negative 5 -hs 0 -binary ${BINARY} -cbow 1 -iter ${ITER_NUM}
 	exit
 elif [ $TYPE = "A" ];then
