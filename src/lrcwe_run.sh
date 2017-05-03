@@ -39,24 +39,13 @@ elif [ $TYPE = "R" ];then
 	exit
 elif [ $TYPE = "SA" ];then
 	echo "R training ..."
-	MODEL_PATH="../gen_data/model/lswe-cbow-${VEC_NUM}-model.sa.${ITER_NUM}.${BELTA_SYN}.${ALPHA_SYN}.${BELTA_ANT}.${ALPHA_ANT}.${IDX}.bin.txt"
+	MODEL_PATH="../gen_data/model/lswe-cbow-${VEC_NUM}-model.sa.${ITER_NUM}.${BELTA_SYN}.${ALPHA_SYN}.${BELTA_ANT}.${ALPHA_ANT}.${IDX}.bin"
 	./lrcwe -train ${TRAIN_PATH} -synonym ${SYNONYM_PATH} -antonym ${ANTONYM_PATH} -output ${MODEL_PATH} -save-vocab ${VOCAB_PATH} -belta-syn ${BELTA_SYN} -alpha-syn ${ALPHA_SYN} -belta-ant ${BELTA_ANT} -alpha-ant ${ALPHA_ANT} -size ${VEC_NUM} -window 5 -sample 1e-4 -negative 5 -hs 0 -binary ${BINARY} -cbow 1 -iter ${ITER_NUM}
 	exit
 elif [ $TYPE = "SAR" ];then
 	echo "SAR training ..."
-	MODEL_PATH="../gen_data/model/lswe-cbow-${VEC_NUM}-model.sar.${ITER_NUM}.${BELTA_SYN}.${ALPHA_SYN}.${BELTA_ANT}.${ALPHA_ANT}.${BELTA_REL}.${ALPHA_REL}.${IDX}.bin.txt"
+	MODEL_PATH="../gen_data/model/lswe-cbow-${VEC_NUM}-model.sar.${ITER_NUM}.${BELTA_SYN}.${ALPHA_SYN}.${BELTA_ANT}.${ALPHA_ANT}.${BELTA_REL}.${ALPHA_REL}.${IDX}.bin"
 	./lrcwe -train ${TRAIN_PATH} -triplet ${TRIPLET_PATH} -synonym ${SYNONYM_PATH} -antonym ${ANTONYM_PATH} -output ${MODEL_PATH} -save-vocab ${VOCAB_PATH} -belta-rel ${BELTA_REL} -alpha-rel ${ALPHA_REL} -belta-syn ${BELTA_SYN} -alpha-syn ${ALPHA_SYN} -belta-ant ${BELTA_ANT} -alpha-ant ${ALPHA_ANT} -size ${VEC_NUM} -window 5 -sample 1e-4 -negative 5 -hs 0 -binary ${BINARY} -cbow 1 -iter ${ITER_NUM}
 	exit
 else echo "Type error"
 fi
-
-
-# triplet + synonym + antonym
-
-# synonym + antonym
-
-# synonym
-
-# antonym
-
-# triplet

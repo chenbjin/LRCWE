@@ -86,7 +86,7 @@ double rand(double min, double max){
 double normal(double x, double miu,double sigma){
   return 1.0/sqrt(2*pi)/sigma*exp(-1*(x-miu)*(x-miu)/(2*sigma*sigma));
 }
-// 在[min,max]区间内做正态分布采样？
+// 在[min,max]区间内做正态分布采样
 double randn(double miu,double sigma, double min ,double max){
   double x,y,dScope;
   do {
@@ -403,23 +403,20 @@ void ReadSynAntonyms(int flag) {
   char word1[MAX_STRING], word2[MAX_STRING];
   FILE *fin;
   if (flag == 1){
-    fin = fopen(synonym_file,"r"); 
+    fin = fopen(synonym_file,"r");
   }else {
     fin = fopen(antonym_file,"r");
   }
   while(!feof(fin)) {
     fgets(buf, 200, fin);
     sscanf(buf,"%s\t%s\n", word1,word2);
-    //printf("%s %s\n", word1,word2);
     i = SearchVocab(word1);
     if (i == -1) {
-      //printf("not find word1: %s\n", word1);
       bcnt ++;
       continue;
     }
     j = SearchVocab(word2);
     if (j == -1) {
-      //printf("not find word2: %s\n", word2);
       continue;
     }
     if (flag == 1) {
@@ -519,7 +516,7 @@ void InitNet() {
     syn2.resize(relation_num);
     for (cc = 0; cc < syn2.size(); cc++) syn2[cc].resize(layer1_size);
     for (a = 0; a < relation_num; a++) {
-      for (b = 0; b < layer1_size; b++) 
+      for (b = 0; b < layer1_size; b++)
         syn2[a][b] = randn(0,1.0/layer1_size,-6/sqrt(layer1_size),6/sqrt(layer1_size));
     }
   }
@@ -563,7 +560,7 @@ void *TrainModelThread(void *id) {
         // The subsampling randomly discards frequent words while keeping the ranking same
         // 对高频词进行下采样，以概率p丢弃。p = 1-[sqrt(t/f(w))+t/f(w)].但仍保持排序不变
         // 先计算ran = sqrt(t/f(w))+t/f(w)，产生(0,1)上的随机数r，如果r>ran，则丢弃。
-        if (sample > 0) { 
+        if (sample > 0) {
           real ran = (sqrt(vocab[word].cn / (sample * train_words)) + 1) * (sample * train_words) / vocab[word].cn;
           next_random = next_random * (unsigned long long)25214903917 + 11;
           if (ran < (next_random & 0xFFFF) / (real)65536) continue;
@@ -624,7 +621,7 @@ void *TrainModelThread(void *id) {
           // 'g' is the gradient multiplied by the learning rate
           // 内部节点0的梯度(1-d-sigmoid(Xw·0))Xw，g为前面部分
           g = (1 - vocab[word].code[d] - f) * alpha;
-          
+
           // Propagate errors output -> hidden
           // 反向传播误差，从huffman树传到隐藏层
           // 累加的梯度更新量
@@ -655,7 +652,7 @@ void *TrainModelThread(void *id) {
           for (c = 0; c < layer1_size; c++) syn1neg[c + l2] += g * neu1[c];  //参数向量更新
         }
         // hidden -> in
-    	  // 更新上下文几个词语的向量。  
+    	  // 更新上下文几个词语的向量。
         for (a = b; a < window * 2 + 1 - b; a++) if (a != window) {
           c = sentence_position - window + a;
           if (c < 0) continue;
@@ -666,71 +663,82 @@ void *TrainModelThread(void *id) {
         }
         //lcwe 训练 @chenbingjin 2017-01-10
         if (flag_synonym > 0 && synonyms[word].size() > 0) {
+          for (c = 0; c < layer1_size; c++) neu1[c] = 0;
+          for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
           for (unsigned int i = 0; i < synonyms[word].size(); ++i) {
             int t = synonyms[word][i];
             l3 = t * layer1_size;
-            for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
-            for (d = 0; d < negative+1;d++) {
-              if (d == 0) {
-                target = word;
-                label = 1;
-              }else {
-                next_random = next_random * (unsigned long long)25214903917 + 11;
-                target = table[(next_random >> 16) % table_size];
-                if (target == 0) target = next_random % (vocab_size - 1) + 1;
-                if (target == word || target == t) continue;
-                //for (unsigned int j = 0; j < synonyms[word].size(); ++j)
-                //  if (target == synonyms[word][j]) continue;
-                label = 0;
-              }
-              l2 = target * layer1_size;
-              f = 0;
-              for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
-              if (f > MAX_EXP) g = (label - 1) * alpha_syn;
-              else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
-              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
-              for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2];
-              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_syn * g * syn0[c + l3];
+            for (c = 0; c < layer1_size; c++) neu1[c] += syn0[c + l3];
+          }
+          // average of synonyms
+          if (synonyms[word].size() > 1) {
+            for (c = 0; c < layer1_size; c++) neu1[c] /= synonyms[word].size();
+          }
+          if (negative > 0) for (d = 0; d < negative + 1; d++) {
+            if (d == 0) {
+               target = word;
+               label = 1;
+            }else {
+               next_random = next_random * (unsigned long long)25214903917 + 11;
+               target = table[(next_random >> 16) % table_size];
+               if (target == 0) target = next_random % (vocab_size - 1) + 1;
+               if (target == word) continue;
+               label = 0;
             }
+            l2 = target * layer1_size;
+            f = 0;
+            for (c = 0; c < layer1_size; c++) f += neu1[c] * syn1lswe[c + l2]; //内积
+            if (f > MAX_EXP) g = (label - 1) * alpha_syn;
+            else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
+            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn; //sigmoid
+            for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2]; //累积误差梯度
+            for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_syn * g * neu1[c];  //参数向量更新
+          }
+          // 更新同义词集的词向量
+          for (unsigned int i = 0; i < synonyms[word].size(); ++i) {
+            int t = synonyms[word][i];
+            l3 = t * layer1_size;
             for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_syn * neu1e[c];
           }
-        } 
+        }
         if (flag_antonym > 0 && antonyms[word].size() > 0) {
-	  //int antsize = antonyms[word].size();
+          for (c = 0; c < layer1_size; c++) neu1[c] = 0;
+          for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
           for (unsigned int i = 0; i < antonyms[word].size(); ++i) {
             int t = antonyms[word][i];
             l3 = t * layer1_size;
-            for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
-            for (d = 0; d < negative+1;d++){
-              /*if (d <= 0) {
-                target = word;
-                label = 0;
-              }else {
-                next_random = next_random * (unsigned long long)25214903917 + 11;
-                target = table[(next_random >> 16) % table_size];
-                if (target == 0) target = next_random % (vocab_size - 1) + 1;
-                //for (unsigned int j = 0; j < antonyms[word].size(); ++j) {
-                //  if (target == antonyms[word][j]) {
-                //    fflag = true;
-                //    break;
-                //  }
-                //}
-                if (target == t || target == word) continue;
-                label = 1;
-              }*/
-              target = word;
-              label = 0;
-              l2 = target * layer1_size;
-              f = 0;
-              for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1lswe[c + l2];
-              if (f > MAX_EXP) g = (label - 1) * alpha_ant;
-              else if (f < -MAX_EXP) g = (label - 0) * alpha_ant;
-              else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_ant;
-              for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2];
-              for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_ant * g * syn0[c + l3]; 
+            for (c = 0; c < layer1_size; c++) neu1[c] += syn0[c + l3];
+          }
+          // average of antonyms
+          if (antonyms[word].size() > 1) {
+            for (c = 0; c < layer1_size; c++) neu1[c] /= antonyms[word].size();
+          }
+          if (negative > 0) for (d = 0; d < negative + 1; d++) {
+            if (d == 0) {
+               target = word;
+               label = 1;
+            }else {
+               next_random = next_random * (unsigned long long)25214903917 + 11;
+               target = table[(next_random >> 16) % table_size];
+               if (target == 0) target = next_random % (vocab_size - 1) + 1;
+               if (target == word) continue;
+               label = 0;
             }
-            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_ant * neu1e[c];              
-          }  
+            l2 = target * layer1_size;
+            f = 0;
+            for (c = 0; c < layer1_size; c++) f += neu1[c] * syn1lswe[c + l2]; //内积
+            if (f > MAX_EXP) g = (label - 1) * alpha_ant;
+            else if (f < -MAX_EXP) g = (label - 0) * alpha_ant;
+            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_ant; //sigmoid
+            for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1lswe[c + l2]; //累积误差梯度
+            for (c = 0; c < layer1_size; c++) syn1lswe[c + l2] += belta_ant * g * neu1[c];  //参数向量更新
+          }
+          // 更新反义词集的词向量
+          for (unsigned int i = 0; i < antonyms[word].size(); ++i) {
+            int t = antonyms[word][i];
+            l3 = t * layer1_size;
+            for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_ant * neu1e[c];
+          }
         }
         //rcwe 训练 @chenbingjin 2017-01-12
         if (flag_triplet > 0 && triplets[word].size() > 0) {
@@ -813,42 +821,7 @@ void *TrainModelThread(void *id) {
         }
         // Learn weights input -> hidden
         for (c = 0; c < layer1_size; c++) syn0[c + l1] += neu1e[c]; //更新的是当前上下文的词向量
-        
-        // lcwe 训练过程
-        // @chenbingjin 2017-01-08
-        if (negative > 0 && synonyms[word].size() > 0) for (unsigned int i = 0; i < synonyms[word].size(); ++i)
-        {
-          int t = synonyms[word][i], l3 = t * layer1_size;
-          int neg_sample = negative;
-          //int antonyms_size = antonyms[word].size();
-          int antonyms_size = 0;
-          for (c = 0; c < layer1_size; c++) neu1e[c] = 0; //梯度向量清零
-          if (antonyms_size > 0) neg_sample = antonyms_size + negative - 1;
-          for (d = 0; d < neg_sample + 1; d++) {
-            if (d == 0) {
-              target = t;
-              label = 1;
-            }else if(d <= antonyms_size) {
-              target = antonyms[word][d-1];
-              label = 0;
-            }else {
-              next_random = next_random * (unsigned long long)25214903917 + 11;
-              target = table[(next_random >> 16) % table_size];
-              if (target == 0) target = next_random % (vocab_size - 1) + 1;
-              if (target == word || target == t) continue;
-              label = 0;
-            }
-            l2 = target * layer1_size;
-            f = 0;
-            for (c = 0; c < layer1_size; c++) f += syn0[c + l3] * syn1neg[c + l2];
-            if (f > MAX_EXP) g = (label - 1) * alpha_syn;
-            else if (f < -MAX_EXP) g = (label - 0) * alpha_syn;
-            else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha_syn;
-            for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1neg[c + l2];
-            for (c = 0; c < layer1_size; c++) syn1neg[c + l2] += belta_syn * g * syn0[c + l3];
-          }
-          for (c = 0; c < layer1_size; c++) syn0[c + l3] += belta_syn * neu1e[c];
-        }
+
       }
     }
     sentence_position++;
@@ -924,7 +897,7 @@ void TrainModel() {
     // 对向量进行聚类
     int clcn = classes, iter = 10, closeid;
     // 该类别的数量
-    int *centcn = (int *)malloc(classes * sizeof(int)); 
+    int *centcn = (int *)malloc(classes * sizeof(int));
     // 每个词对应类别
     int *cl = (int *)calloc(vocab_size, sizeof(int));
     real closev, x;
@@ -990,22 +963,6 @@ int ArgPos(char *str, int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-  /*
-  int i;
-  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
-  vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
-  expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
-  for (i = 0; i < EXP_TABLE_SIZE; i++) {
-    expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
-    expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)
-  }
-  read_vocab_file[0] = 0;
-  strcpy(read_vocab_file,"../gen_data/model/vocab.1b");
-  ReadVocab();
-  printf("read ...\n");
-  ReadSynAntonyms(1);
-  ReadSynAntonyms(2);
-  */
   int i;
   if (argc == 1) {
     printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
